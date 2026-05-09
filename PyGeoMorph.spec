@@ -52,6 +52,10 @@ datas = [
     ('templates', 'templates'),
 ]
 try:
+    datas += collect_data_files('numpy')
+except Exception:
+    pass
+try:
     datas += collect_data_files('scipy')
 except Exception:
     pass
