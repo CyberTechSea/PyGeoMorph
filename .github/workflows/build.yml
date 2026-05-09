@@ -108,7 +108,7 @@ jobs:
             exit 1
           fi
 
-- name: Smoke test (Windows)
+      - name: Smoke test (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
