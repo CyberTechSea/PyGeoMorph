@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PyGeoMorph — Geometric Shell Morphometry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+:root{
+  --abyss:#0a1822;
+  --deep:#0f2230;
+  --ocean:#143247;
+  --teal:#1d4d63;
+  --foam:#e8e4d6;
+  --bone:#f5f1e3;
+  --paper:#fbf8ee;
+  --coral:#d6553d;
+  --amber:#e0a542;
+  --kelp:#5e7c52;
+  --ink:#0a1822;
+  --muted:#6b7d88;
+  --line:rgba(10,24,34,0.12);
+  --line-strong:rgba(10,24,34,0.25);
+  --shadow: 0 1px 0 rgba(10,24,34,0.04), 0 8px 32px -12px rgba(10,24,34,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter Tight', system-ui, sans-serif;
+  background:var(--paper);color:var(--ink);
+  font-size:14.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(214,85,61,0.04) 0, transparent 40%),
+    radial-gradient(circle at 88% 92%, rgba(20,50,71,0.05) 0, transparent 45%);
+  min-height:100vh;
+}
+.masthead{background:var(--abyss);color:var(--bone);border-bottom:1px solid #000;position:relative;overflow:hidden;}
+.masthead::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 80% 50%, rgba(214,85,61,0.18) 0, transparent 40%),
+    radial-gradient(circle at 15% 30%, rgba(224,165,66,0.10) 0, transparent 35%);
+  pointer-events:none;
+}
+.masthead-inner{
+  max-width:1600px;margin:0 auto;padding:18px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:24px;position:relative;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:18px}
+.brand-mark{
+  width:54px;height:54px;
+  border:1.5px solid var(--bone);border-radius:50%;
+  display:grid;place-items:center;position:relative;
+  background:radial-gradient(circle at 35% 30%, rgba(245,241,227,0.15), transparent 60%);
+}
+.brand-mark::after{
+  content:"";position:absolute;inset:8px;
+  border:1px solid rgba(245,241,227,0.4);border-radius:50%;
+  border-top-color:var(--coral);border-right-color:var(--coral);
+  transform:rotate(-25deg);
+}
+.brand-mark span{
+  font-family:'Fraunces',serif;font-weight:900;font-size:22px;
+  font-style:italic;color:var(--bone);z-index:1;
+}
+.brand-text h1{font-family:'Fraunces', serif;font-weight:600;font-size:24px;letter-spacing:-0.01em;line-height:1;}
+.brand-text h1 em{font-style:italic;font-weight:500;color:var(--amber);}
+.brand-text .sub{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px;letter-spacing:0.18em;
+  text-transform:uppercase;color:rgba(245,241,227,0.6);margin-top:5px;
+}
+.masthead-meta{
+  display:flex;gap:28px;align-items:center;
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;letter-spacing:0.12em;
+  text-transform:uppercase;color:rgba(245,241,227,0.65);
+}
+.masthead-meta b{color:var(--bone);font-weight:500}
+.masthead-meta .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--kelp);
+  box-shadow:0 0 0 3px rgba(94,124,82,0.25);
+  display:inline-block;margin-right:6px;
+}
+.masthead-meta .ver{
+  background:var(--coral);color:#fff;
+  padding:3px 8px;border-radius:2px;letter-spacing:0.15em;font-size:9.5px;
+}
+.layout{
+  max-width:1600px;margin:0 auto;padding:28px 32px 80px;
+  display:grid;grid-template-columns: 320px 1fr;gap:28px;
+}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}}
+.sidebar{position:sticky;top:20px;align-self:start;display:flex;flex-direction:column;gap:20px;}
+.panel{background:var(--bone);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);}
+.panel-head{
+  padding:14px 18px 10px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+}
+.panel-head h3{font-family:'Fraunces', serif;font-weight:600;font-size:15px;letter-spacing:-0.01em;}
+.panel-head .num{font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--muted);letter-spacing:0.15em;}
+.panel-body{padding:16px 18px}
+label.field{display:block;margin-bottom:14px}
+label.field:last-child{margin-bottom:0}
+label.field span{
+  display:block;font-family:'JetBrains Mono', monospace;font-size:10px;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;
+}
+input[type="text"],input[type="number"],select{
+  width:100%;padding:8px 10px;border:1px solid var(--line-strong);border-radius:2px;
+  background:var(--paper);font-family:'Inter Tight', sans-serif;font-size:13.5px;color:var(--ink);
+  transition:border-color .15s, background .15s;
+  -webkit-appearance:none;-moz-appearance:textfield;appearance:none;
+}
+input[type="text"]:focus,input[type="number"]:focus,select:focus{outline:none;border-color:var(--ocean);background:#fff;}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button{
+  -webkit-appearance:none;margin:0;display:none;
+}
+input[type="number"]{-moz-appearance:textfield;}
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='%230a1822' d='M6 8L0 0h12z'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:10px;
+  padding-right:30px;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 16px;
+  font-family:'Inter Tight', sans-serif;font-size:13px;font-weight:600;letter-spacing:0.01em;
+  border:1px solid var(--ink);background:var(--ink);color:var(--bone);border-radius:2px;
+  cursor:pointer;transition:transform .08s, background .15s, color .15s;
+}
+.btn:hover{background:var(--ocean);border-color:var(--ocean)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--bone)}
+.btn.coral{background:var(--coral);border-color:var(--coral);color:#fff}
+.btn.coral:hover{background:#b9462f;border-color:#b9462f}
+.btn.full{width:100%;justify-content:center}
+.btn.sm{padding:6px 11px;font-size:11.5px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.dropzone{
+  border:1.5px dashed var(--line-strong);border-radius:4px;
+  padding:20px 14px;text-align:center;background:var(--paper);
+  cursor:pointer;transition:border-color .15s, background .15s;
+}
+.dropzone:hover{border-color:var(--ocean);background:#fff}
+.dropzone.drag{border-color:var(--coral);background:rgba(214,85,61,0.06)}
+.dropzone-icon{
+  width:36px;height:36px;margin:0 auto 8px;
+  border:1px solid var(--line-strong);border-radius:50%;display:grid;place-items:center;
+  font-family:'Fraunces',serif;font-style:italic;font-size:18px;color:var(--ocean);
+}
+.dropzone p{font-size:13px;color:var(--ink)}
+.dropzone .hint{font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:0.1em;color:var(--muted);margin-top:5px;}
+.specimen-list{display:flex;flex-direction:column;gap:1px;background:var(--line);border-top:1px solid var(--line);max-height:300px;overflow-y:auto;}
+.specimen{
+  padding:11px 18px;background:var(--bone);
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:background .12s;position:relative;
+}
+.specimen:hover{background:var(--paper)}
+.specimen.active{background:#fff}
+.specimen.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--coral);}
+.specimen-thumb{
+  width:42px;height:42px;background:var(--abyss);border-radius:2px;
+  background-size:cover;background-position:center;flex-shrink:0;border:1px solid var(--line-strong);
+}
+.specimen-info{flex:1;min-width:0}
+.specimen-info .name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.specimen-info .meta{font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--muted);letter-spacing:0.06em;margin-top:2px;}
+.group-pill{
+  font-family:'JetBrains Mono', monospace;font-size:9.5px;
+  padding:2px 6px;border:1px solid var(--line-strong);border-radius:2px;
+  text-transform:uppercase;letter-spacing:0.1em;color:var(--ocean);background:rgba(20,50,71,0.04);
+}
+.specimen-empty{padding:22px;text-align:center;color:var(--muted);font-size:12.5px;font-style:italic;}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--line-strong);margin-bottom:-1px;
+  overflow-x:auto;
+}
+.tab{
+  padding:11px 20px;background:transparent;border:none;
+  font-family:'Inter Tight', sans-serif;font-size:13px;font-weight:500;letter-spacing:0.02em;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  white-space:nowrap;
+}
+.tab.active{color:var(--ink);border-bottom-color:var(--coral);font-weight:700;}
+.tab:hover:not(.active){color:var(--ink)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.viewer-shell{background:var(--bone);border:1px solid var(--line);border-radius:4px;overflow:hidden;box-shadow:var(--shadow);}
+.viewer-bar{
+  padding:12px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--paper);
+}
+.viewer-title{font-family:'Fraunces', serif;font-size:18px;font-weight:600;letter-spacing:-0.01em;}
+.viewer-title em{font-style:italic;color:var(--coral)}
+.viewer-meta{
+  font-family:'JetBrains Mono', monospace;font-size:11px;color:var(--muted);letter-spacing:0.05em;
+  display:flex;gap:18px;flex-wrap:wrap;
+}
+.viewer-meta b{color:var(--ink);font-weight:500}
+.canvas-wrap{
+  position:relative;
+  background:
+    linear-gradient(45deg, #efece0 25%, transparent 25%),
+    linear-gradient(-45deg, #efece0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #efece0 75%),
+    linear-gradient(-45deg, transparent 75%, #efece0 75%);
+  background-size:18px 18px;background-position:0 0, 0 9px, 9px -9px, -9px 0;
+  background-color:var(--paper);
+  min-height:420px;display:grid;place-items:center;padding:18px;
+}
+#viewerCanvas{display:block;background:#fff;box-shadow:0 4px 24px rgba(10,24,34,0.18);cursor:crosshair;max-width:100%;}
+.canvas-empty{text-align:center;color:var(--muted);font-family:'Fraunces', serif;font-style:italic;font-size:18px;padding:60px 20px;}
+.canvas-empty .big{font-size:80px;color:var(--line-strong);font-weight:900;display:block;margin-bottom:8px;font-style:italic;}
+.viewer-toolbar{padding:10px 18px;border-top:1px solid var(--line);background:var(--paper);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.tool-group{display:flex;gap:6px;align-items:center;padding-right:14px;border-right:1px solid var(--line);}
+.tool-group:last-child{border-right:none;padding-right:0}
+.tool-group label{font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:20px;}
+.result-card{background:var(--bone);border:1px solid var(--line);border-radius:4px;padding:18px 20px;box-shadow:var(--shadow);}
+.result-card.feature{background:var(--abyss);color:var(--bone);border-color:var(--abyss);}
+.result-card.feature h4{color:var(--amber)}
+.result-card.feature .stat-label{color:rgba(245,241,227,0.6)}
+.result-card h4{font-family:'Fraunces',serif;font-weight:600;font-size:16px;letter-spacing:-0.01em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.result-card h4 .badge{
+  font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:0.12em;
+  padding:3px 8px;border:1px solid currentColor;border-radius:2px;color:var(--coral);text-transform:uppercase;
+}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 18px;}
+.stat-item{border-top:1px solid var(--line);padding-top:8px;}
+.result-card.feature .stat-item{border-top-color:rgba(245,241,227,0.15);}
+.stat-label{font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.stat-value{font-family:'Fraunces',serif;font-size:22px;font-weight:600;letter-spacing:-0.01em;line-height:1.1;}
+.stat-value.mono{font-family:'JetBrains Mono', monospace;font-size:18px;font-weight:500;}
+.stat-value .unit{font-size:11px;color:var(--muted);font-weight:500;font-family:'JetBrains Mono', monospace;margin-left:4px;letter-spacing:0.08em;}
+.plot-card{background:var(--bone);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden;}
+.plot-card-head{padding:13px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.plot-card-head h4{font-family:'Fraunces',serif;font-weight:600;font-size:15px;}
+.plot-card-head .desc{font-family:'JetBrains Mono', monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+.plot-body{padding:8px;min-height:380px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'JetBrains Mono', monospace;}
+.data-table th{text-align:left;padding:8px 10px;background:var(--paper);border-bottom:1px solid var(--line-strong);font-weight:500;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.data-table td{padding:7px 10px;border-bottom:1px solid var(--line);}
+.data-table tr:hover td{background:rgba(214,85,61,0.04)}
+.empty-state{text-align:center;padding:80px 30px;background:var(--bone);border:1px dashed var(--line-strong);border-radius:4px;color:var(--muted);}
+.empty-state .marker{font-family:'Fraunces',serif;font-size:64px;font-style:italic;color:var(--line-strong);margin-bottom:10px;}
+.empty-state h3{font-family:'Fraunces',serif;font-size:22px;color:var(--ink);font-weight:600;margin-bottom:6px;}
+.empty-state p{font-size:13.5px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--bone);padding:12px 18px;border-radius:3px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(10,24,34,0.32);transform:translateY(80px);opacity:0;transition:transform .25s, opacity .25s;z-index:1000;max-width:380px;}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{background:var(--coral)}
+.toast.ok{background:var(--kelp)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+input[type="file"]{display:none}
+.footer{margin-top:60px;padding:24px 32px;border-top:1px solid var(--line);font-family:'JetBrains Mono', monospace;font-size:10.5px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;max-width:1600px;margin-left:auto;margin-right:auto;}
+.footer em{color:var(--coral);font-style:italic}
+.divider{height:1px;background:var(--line);margin:14px 0;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.template-info{
+  background:var(--paper);border:1px solid var(--line);border-radius:3px;
+  padding:10px 12px;font-size:12px;color:var(--muted);
+  line-height:1.5;margin-top:8px;
+}
+.template-info b{color:var(--ink)}
+.cite-banner{
+  background:linear-gradient(120deg, var(--abyss), var(--ocean));
+  color:var(--bone);padding:14px 20px;border-radius:4px;
+  margin-bottom:24px;font-size:13px;line-height:1.55;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.cite-banner .icon{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:900;
+  font-size:32px;color:var(--amber);line-height:1;flex-shrink:0;
+}
+.cite-banner em{color:var(--amber);font-style:italic;font-weight:500;}
+.cite-banner .sub{
+  font-family:'JetBrains Mono', monospace;font-size:10px;
+  letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,241,227,0.6);margin-top:4px;
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <div class="brand-mark"><span>P</span></div>
+      <div class="brand-text">
+        <h1>PyGeo<em>Morph</em></h1>
+        <div class="sub">Geometric Shell Morphometry — Marine Invertebrates</div>
+      </div>
+    </div>
+    <div class="masthead-meta">
+      <span class="ver">v 2.0</span>
+      <div><span class="dot"></span><b>Procrustes + RRPP</b></div>
+      <div><b id="metaSpecimens">0</b> specimens</div>
+      <div><b id="metaLandmarks">0</b> landmarks/spec</div>
+      <div id="metaStatus">Idle</div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Acquisition</h3>
+        <span class="num">01</span>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>Specimen group / taxon</span>
+          <input type="text" id="groupInput" placeholder="e.g., Rissoa_guerinii" value="default" />
+        </label>
+        <label class="field">
+          <span>Landmark template</span>
+          <select id="templateSelect"></select>
+          <div class="template-info" id="templateInfo">Loading templates…</div>
+        </label>
+        <div class="row-2">
+          <label class="field">
+            <span># Landmarks</span>
+            <input type="number" id="nLandmarks" value="19" min="3" max="200" />
+          </label>
+          <label class="field">
+            <span>Detection</span>
+            <select id="detectMethod">
+              <option value="active_contour">Curvature peaks</option>
+              <option value="contour">Equidistant outline</option>
+              <option value="shi-tomasi">Shi-Tomasi corners</option>
+              <option value="harris">Harris corners</option>
+            </select>
+          </label>
+        </div>
+        <label for="fileInput" class="dropzone" id="dropzone">
+          <div class="dropzone-icon">↥</div>
+          <p><b>Upload specimen image</b></p>
+          <div class="hint">JPG · PNG · TIF · PDF · drag & drop</div>
+        </label>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.tif,.tiff,.pdf,application/pdf,image/*" multiple />
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Specimens</h3>
+        <span class="num" id="specCount">0</span>
+      </div>
+      <div class="specimen-list" id="specimenList">
+        <div class="specimen-empty">No specimens yet —<br/>upload your first sample.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Pipeline</h3>
+        <span class="num">02</span>
+      </div>
+      <div class="panel-body">
+        <label class="field">
+          <span>RRPP permutations</span>
+          <input type="number" id="nPerm" value="999" min="99" max="9999" />
+        </label>
+        <label class="field" style="margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);font-family:'Inter Tight',sans-serif">
+            <input type="checkbox" id="useSliders" checked style="width:auto;margin:0" />
+            Use sliding semi-landmarks (BE-min)
+          </span>
+        </label>
+        <label class="field">
+          <span style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);font-family:'Inter Tight',sans-serif">
+            <input type="checkbox" id="doEFA" checked style="width:auto;margin:0" />
+            Compute Elliptic Fourier (EFA)
+          </span>
+        </label>
+        <button class="btn coral full" id="runAnalysis">
+          <span>▶</span> Run Full Pipeline
+        </button>
+        <div class="divider"></div>
+        <div class="btn-row">
+          <button class="btn ghost sm" id="exportCSV">Export CSV</button>
+          <button class="btn ghost sm" id="exportTPS">Export TPS</button>
+          <button class="btn ghost sm" id="resetAll" style="margin-left:auto;color:var(--coral);border-color:var(--coral)">Reset</button>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <main class="main">
+
+    <div class="cite-banner">
+      <div class="icon">§</div>
+      <div>
+        <b>Geometric morphometric pipeline modernised over Criscione &amp; Patti (2010, <em>The Nautilus</em> 124(3):117–128).</b>
+        Built-in Rissoidae template (19 landmarks; apex, three last whorls, aperture).
+        Updated with sliding semi-landmarks (Gunz, Mitteroecker &amp; Bookstein 2005), Procrustes ANOVA via RRPP (Collyer &amp; Adams 2018),
+        Elliptic Fourier outline analysis (Bonhomme et&nbsp;al. 2014), Common Allometric Component (Mitteroecker et&nbsp;al. 2004),
+        and Kmult phylogenetic signal (Adams 2014).
+        <div class="sub">All-in-one replacement for tpsDig2 + tpsRelw + SPSS + SYSTAT.</div>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="digitize">Digitize</button>
+      <button class="tab" data-tab="procrustes">Procrustes (GPA)</button>
+      <button class="tab" data-tab="pca">PCA · Shape Space</button>
+      <button class="tab" data-tab="tps">TPS Deformation</button>
+      <button class="tab" data-tab="efa">EFA Outline</button>
+      <button class="tab" data-tab="stats">Statistics · RRPP</button>
+      <button class="tab" data-tab="allometry">Allometry · CAC</button>
+      <button class="tab" data-tab="data">Raw Data</button>
+    </nav>
+
+    <section class="tab-content active" id="tab-digitize">
+      <div class="viewer-shell">
+        <div class="viewer-bar">
+          <div>
+            <div class="viewer-title">Specimen <em id="viewerName">—</em></div>
+            <div class="viewer-meta">
+              <span><b id="viewerDim">—</b> px</span>
+              <span><b id="viewerLM">0</b> landmarks</span>
+              <span>CS: <b id="viewerCS">—</b></span>
+              <span>Group: <b id="viewerGroup">—</b></span>
+              <span>Template: <b id="viewerTpl">—</b></span>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn ghost sm" id="redetect">Re-detect</button>
+            <button class="btn ghost sm" id="clearLM">Clear</button>
+            <button class="btn ghost sm" id="saveLM">Save</button>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="canvas-empty" id="canvasEmpty">
+            <span class="big">∮</span>
+            Select a specimen<br/>or upload an image to begin digitizing.
+          </div>
+          <canvas id="viewerCanvas" style="display:none"></canvas>
+        </div>
+        <div class="viewer-toolbar">
+          <div class="tool-group">
+            <label>Mode</label>
+            <select id="modeSelect" style="width:auto">
+              <option value="add">Add LM</option>
+              <option value="move">Move LM</option>
+              <option value="delete">Delete LM</option>
+            </select>
+          </div>
+          <div class="tool-group">
+            <label>Show</label>
+            <select id="overlaySelect" style="width:auto">
+              <option value="numbers">Numbered</option>
+              <option value="dots">Dots only</option>
+              <option value="links">Connected (template)</option>
+              <option value="outline">+ Outline (EFA)</option>
+              <option value="sliders">Highlight sliders</option>
+            </select>
+          </div>
+          <div class="tool-group">
+            <label>Zoom</label>
+            <button class="btn ghost sm" id="zoomOut">−</button>
+            <button class="btn ghost sm" id="zoomReset">100%</button>
+            <button class="btn ghost sm" id="zoomIn">+</button>
+          </div>
+          <div class="tool-group" style="margin-left:auto">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:var(--muted); letter-spacing:0.1em">
+              CLICK CANVAS · Behaviour follows mode
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-procrustes">
+      <div id="procrustesEmpty" class="empty-state">
+        <div class="marker">∑</div>
+        <h3>Awaiting analysis</h3>
+        <p>Upload ≥3 specimens with equal landmark counts, then click <b>Run Full Pipeline</b>.</p>
+      </div>
+      <div id="procrustesContent" style="display:none">
+        <div class="analysis-grid" style="margin-bottom:24px">
+          <div class="result-card feature">
+            <h4>GPA Summary <span class="badge" id="gpaSliderBadge">FIXED</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">Specimens</div><div class="stat-value mono" id="gpaN">—</div></div>
+              <div class="stat-item"><div class="stat-label">Landmarks</div><div class="stat-value mono" id="gpaK">—</div></div>
+              <div class="stat-item"><div class="stat-label">Total Procrustes Variance</div><div class="stat-value mono" id="gpaTotalVar">—</div></div>
+              <div class="stat-item"><div class="stat-label">Iterations to convergence</div><div class="stat-value mono" id="gpaIters">—</div></div>
+            </div>
+          </div>
+          <div class="result-card">
+            <h4>Centroid Sizes</h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">Mean CS</div><div class="stat-value mono" id="csMean">—</div></div>
+              <div class="stat-item"><div class="stat-label">Std deviation</div><div class="stat-value mono" id="csStd">—</div></div>
+              <div class="stat-item"><div class="stat-label">Min CS</div><div class="stat-value mono" id="csMin">—</div></div>
+              <div class="stat-item"><div class="stat-label">Max CS</div><div class="stat-value mono" id="csMax">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="plot-card">
+          <div class="plot-card-head">
+            <h4>Aligned configurations + consensus shape</h4>
+            <div class="desc">After GPA</div>
+          </div>
+          <div class="plot-body" id="plotProcrustes"></div>
+        </div>
+        <div class="plot-card" style="margin-top:20px">
+          <div class="plot-card-head">
+            <h4>Per-specimen Procrustes distance to consensus</h4>
+            <div class="desc">Outlier detection</div>
+          </div>
+          <div class="plot-body" id="plotProcDist"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-pca">
+      <div id="pcaEmpty" class="empty-state">
+        <div class="marker">⊕</div>
+        <h3>No shape space yet</h3>
+        <p>Run the analysis to project specimens into the morphospace.</p>
+      </div>
+      <div id="pcaContent" style="display:none">
+        <div class="analysis-grid" style="grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px">
+          <div class="plot-card">
+            <div class="plot-card-head"><h4>Morphospace · PC1 vs PC2</h4><div class="desc" id="pcaVarLabel">—</div></div>
+            <div class="plot-body" id="plotPCA"></div>
+          </div>
+          <div class="plot-card">
+            <div class="plot-card-head"><h4>Scree plot</h4><div class="desc">Variance explained</div></div>
+            <div class="plot-body" id="plotScree"></div>
+          </div>
+        </div>
+        <div class="plot-card">
+          <div class="plot-card-head">
+            <h4>PC scores table (first 6 components)</h4>
+            <div class="desc">Per-specimen shape variables</div>
+          </div>
+          <div class="plot-body" style="padding:0;overflow-x:auto">
+            <table class="data-table" id="pcaTable"></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-tps">
+      <div id="tpsEmpty" class="empty-state">
+        <div class="marker">∂</div>
+        <h3>No deformation grid</h3>
+        <p>Run analysis to generate Thin-Plate Spline deformations along PC1.</p>
+      </div>
+      <div id="tpsContent" style="display:none">
+        <div class="result-card feature" style="margin-bottom:20px">
+          <h4>TPS Bending Energy <span class="badge">Bookstein 1989</span></h4>
+          <div class="stat-grid">
+            <div class="stat-item"><div class="stat-label">Bending energy</div><div class="stat-value mono" id="tpsBE">—</div></div>
+            <div class="stat-item"><div class="stat-label">Source</div><div class="stat-value mono" style="font-size:13px">consensus</div></div>
+            <div class="stat-item"><div class="stat-label">Target</div><div class="stat-value mono" style="font-size:13px" id="tpsTarget">—</div></div>
+            <div class="stat-item"><div class="stat-label">Grid resolution</div><div class="stat-value mono">18×18</div></div>
+          </div>
+        </div>
+        <div class="plot-card">
+          <div class="plot-card-head"><h4>Thin-Plate Spline · Consensus → PC1 extreme</h4><div class="desc">Localised shape deformation</div></div>
+          <div class="plot-body" id="plotTPS"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-efa">
+      <div id="efaEmpty" class="empty-state">
+        <div class="marker">≈</div>
+        <h3>No outline analysis</h3>
+        <p>Elliptic Fourier Analysis runs automatically when contour outlines are detected. Enable EFA in the Pipeline panel.</p>
+      </div>
+      <div id="efaContent" style="display:none">
+        <div class="result-card feature" style="margin-bottom:20px">
+          <h4>Elliptic Fourier Analysis <span class="badge">Kuhl &amp; Giardina 1982</span></h4>
+          <div class="stat-grid">
+            <div class="stat-item"><div class="stat-label">Specimens analysed</div><div class="stat-value mono" id="efaN">—</div></div>
+            <div class="stat-item"><div class="stat-label">Harmonics</div><div class="stat-value mono" id="efaH">—</div></div>
+            <div class="stat-item"><div class="stat-label">EFA-PC1</div><div class="stat-value mono" id="efaPC1">—</div></div>
+            <div class="stat-item"><div class="stat-label">EFA-PC2</div><div class="stat-value mono" id="efaPC2">—</div></div>
+          </div>
+        </div>
+        <div class="plot-card">
+          <div class="plot-card-head"><h4>EFA Morphospace</h4><div class="desc">Outline-based shape variation</div></div>
+          <div class="plot-body" id="plotEFA"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-stats">
+      <div id="statsEmpty" class="empty-state">
+        <div class="marker">σ</div>
+        <h3>No statistical output</h3>
+        <p>Run analysis to compute Procrustes ANOVA (RRPP), MANOVA, Mahalanobis distances, and disparity.</p>
+      </div>
+      <div id="statsContent" style="display:none">
+        <div class="analysis-grid" style="margin-bottom:20px">
+          <div class="result-card feature" id="rrppCard">
+            <h4>Procrustes ANOVA · RRPP <span class="badge" id="rrppBadge">—</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">F</div><div class="stat-value mono" id="rrppF">—</div></div>
+              <div class="stat-item"><div class="stat-label">R²</div><div class="stat-value mono" id="rrppR2">—</div></div>
+              <div class="stat-item"><div class="stat-label">Z (effect size)</div><div class="stat-value mono" id="rrppZ">—</div></div>
+              <div class="stat-item"><div class="stat-label">p (perm.)</div><div class="stat-value mono" id="rrppP">—</div></div>
+              <div class="stat-item"><div class="stat-label">df (groups, residual)</div><div class="stat-value mono" id="rrppDf">—</div></div>
+              <div class="stat-item"><div class="stat-label">N permutations</div><div class="stat-value mono" id="rrppNperm">—</div></div>
+            </div>
+          </div>
+          <div class="result-card" id="manovaCard">
+            <h4>MANOVA · Wilks Λ <span class="badge" id="manovaBadge">—</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">Wilks Λ</div><div class="stat-value mono" id="manovaWilks">—</div></div>
+              <div class="stat-item"><div class="stat-label">χ²</div><div class="stat-value mono" id="manovaChi">—</div></div>
+              <div class="stat-item"><div class="stat-label">df</div><div class="stat-value mono" id="manovaDf">—</div></div>
+              <div class="stat-item"><div class="stat-label">p-value</div><div class="stat-value mono" id="manovaP">—</div></div>
+            </div>
+          </div>
+          <div class="result-card">
+            <h4>Disparity</h4>
+            <div class="stat-grid" id="disparityGrid"></div>
+          </div>
+          <div class="result-card" id="phyloCard" style="display:none">
+            <h4>Phylogenetic signal · Kmult <span class="badge">Adams 2014</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">K_mult</div><div class="stat-value mono" id="kmult">—</div></div>
+              <div class="stat-item"><div class="stat-label">p-value</div><div class="stat-value mono" id="kmultP">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="plot-card" id="mahalanobisCard">
+          <div class="plot-card-head"><h4>Pairwise Mahalanobis distances between groups</h4><div class="desc">Multivariate group separation</div></div>
+          <div class="plot-body" id="plotMahal"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-allometry">
+      <div id="allomEmpty" class="empty-state">
+        <div class="marker">α</div>
+        <h3>No allometric analysis</h3>
+        <p>Run the pipeline to compute the size-shape relationship.</p>
+      </div>
+      <div id="allomContent" style="display:none">
+        <div class="analysis-grid" style="margin-bottom:20px">
+          <div class="result-card feature">
+            <h4>Allometry · multivariate regression <span class="badge" id="allomBadge">—</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">R²  (shape ~ log CS)</div><div class="stat-value mono" id="allomR2">—</div></div>
+              <div class="stat-item"><div class="stat-label">p-value (perm.)</div><div class="stat-value mono" id="allomP">—</div></div>
+              <div class="stat-item"><div class="stat-label">‖slope‖</div><div class="stat-value mono" id="allomSlope">—</div></div>
+              <div class="stat-item"><div class="stat-label">PCs used</div><div class="stat-value mono" id="allomPCs">—</div></div>
+            </div>
+          </div>
+          <div class="result-card" id="hosCard" style="display:none">
+            <h4>Homogeneity of slopes <span class="badge" id="hosBadge">—</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">F</div><div class="stat-value mono" id="hosF">—</div></div>
+              <div class="stat-item"><div class="stat-label">p-value</div><div class="stat-value mono" id="hosP">—</div></div>
+            </div>
+            <div style="margin-top:10px;font-size:12.5px;color:var(--muted);font-style:italic" id="hosInterp"></div>
+          </div>
+          <div class="result-card">
+            <h4>Common Allometric Component <span class="badge">Mitteroecker 2004</span></h4>
+            <div class="stat-grid">
+              <div class="stat-item"><div class="stat-label">CAC norm</div><div class="stat-value mono" id="cacNorm">—</div></div>
+              <div class="stat-item"><div class="stat-label">Residual variance</div><div class="stat-value mono" id="cacRes">—</div></div>
+              <div class="stat-item" style="grid-column:1 / -1"><div class="stat-label">Allometric / total variance</div><div class="stat-value mono" id="cacRatio">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="plot-card">
+          <div class="plot-card-head"><h4>Allometric trajectory · log(CS) vs CAC scores</h4><div class="desc">Size-shape coupling</div></div>
+          <div class="plot-body" id="plotAllometry"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="tab-data">
+      <div class="plot-card">
+        <div class="plot-card-head">
+          <h4>Specimen registry</h4>
+          <div class="desc">All loaded samples</div>
+        </div>
+        <div class="plot-body" style="padding:0;overflow-x:auto">
+          <table class="data-table" id="registryTable"></table>
+        </div>
+      </div>
+      <div class="plot-card" style="margin-top:20px">
+        <div class="plot-card-head">
+          <h4>Raw landmark coordinates</h4>
+          <div class="desc">Pre-Procrustes (image space)</div>
+        </div>
+        <div class="plot-body" style="padding:0;overflow-x:auto;max-height:500px">
+          <table class="data-table" id="rawTable"></table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div>PyGeoMorph v2.0 · <em>Geometric Shell Morphometry</em></div>
+  <div>GPA · Sliders · TPS · RRPP · EFA · CAC · Kmult · Mahalanobis</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let SPECIMENS = [];
+let CURRENT = null;
+let ANALYSIS = null;
+let TEMPLATES = {};
+let ZOOM = 1, CANVAS_SCALE = 1;
+const MAX_W = 760;
+
+const PLOTLY_LAYOUT_BASE = {
+  font:{family:'Inter Tight, sans-serif', color:'#0a1822', size:12},
+  paper_bgcolor:'#f5f1e3', plot_bgcolor:'#fbf8ee',
+  margin:{l:60,r:30,t:30,b:55},
+  xaxis:{gridcolor:'rgba(10,24,34,0.08)', zerolinecolor:'rgba(10,24,34,0.2)', linecolor:'#0a1822', mirror:true},
+  yaxis:{gridcolor:'rgba(10,24,34,0.08)', zerolinecolor:'rgba(10,24,34,0.2)', linecolor:'#0a1822', mirror:true},
+};
+const GROUP_COLORS = ['#d6553d','#143247','#5e7c52','#e0a542','#7c3a99','#2a8a8a','#b14d8a','#3a4a99'];
+function colorFor(group, idx, list){
+  const unique = Array.from(new Set(list));
+  return GROUP_COLORS[unique.indexOf(group) % GROUP_COLORS.length];
+}
+
+function toast(msg, kind='ok'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + kind;
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>{ t.classList.remove('show') }, 3200);
+}
+function fmt(v, d=4){
+  if(v === null || v === undefined || isNaN(v)) return '—';
+  if(Math.abs(v) >= 1e5 || (Math.abs(v) < 1e-3 && v !== 0)) return v.toExponential(2);
+  return Number(v).toFixed(d);
+}
+
+// ============= TEMPLATES =============
+// Hardcoded fallback used if the Flask backend is not reachable
+// (e.g. when the HTML is opened as a static file). The backend, when running,
+// returns the same data via /api/templates and is the authoritative source.
+const FALLBACK_TEMPLATES = {
+  "rissoa": {
+    name: "Rissoidae gastropod (19 LM, Criscione & Patti 2010)",
+    n_landmarks: 19,
+    description: "19-landmark configuration on gastropod shells. LM1 = apex; LM2/4/6 right whorl borders; LM3/5 sliding semi-landmarks; LM7-14 aperture and outer lip; LM15-19 left whorl mirror.",
+    links: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,18],[18,0]],
+  },
+  "bivalve": {
+    name: "Bivalve outline (15 LM)",
+    n_landmarks: 15,
+    description: "15-landmark configuration for bivalve outline: umbo (LM1), anterior margin (LM8), posterior margin (LM15) as anchors, with sliding semi-landmarks along the dorsal and ventral margins.",
+    links: Array.from({length:15}, (_,i) => [i, (i+1)%15]),
+  },
+  "echinoid": {
+    name: "Echinoid test (12 LM)",
+    n_landmarks: 12,
+    description: "12-landmark configuration for sea urchin tests at ambulacral and interambulacral plate boundaries.",
+    links: Array.from({length:12}, (_,i) => [i, (i+1)%12]),
+  },
+  "generic_outline": {
+    name: "Generic outline (15 sliding semi-LM)",
+    n_landmarks: 15,
+    description: "Generic closed-outline template; first LM as anchor.",
+    links: Array.from({length:15}, (_,i) => [i, (i+1)%15]),
+  },
+};
+
+async function loadTemplates(){
+  const sel = document.getElementById('templateSelect');
+  const info = document.getElementById('templateInfo');
+  let usedFallback = false;
+  try{
+    const r = await fetch('/api/templates');
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    TEMPLATES = await r.json();
+  }catch(err){
+    TEMPLATES = FALLBACK_TEMPLATES;
+    usedFallback = true;
+  }
+  sel.innerHTML = '';
+  Object.entries(TEMPLATES).forEach(([k,v]) => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = v.name;
+    sel.appendChild(opt);
+  });
+  sel.value = 'rissoa';
+  updateTemplateInfo();
+  sel.addEventListener('change', updateTemplateInfo);
+  if(usedFallback){
+    info.innerHTML += '<br><span style="color:var(--coral);font-weight:600">' +
+      '⚠ Backend Flask non raggiungibile.</span> ' +
+      'Avvia <code style="background:var(--ink);color:var(--bone);padding:1px 5px;border-radius:2px;font-size:11px">python app.py</code> ' +
+      'e apri <b>http://127.0.0.1:5000</b>. Le funzioni di analisi non sono attive senza server.';
+    toast('Backend Flask non in esecuzione — modalità anteprima', 'error');
+  }
+}
+
+function updateTemplateInfo(){
+  const k = document.getElementById('templateSelect').value;
+  const t = TEMPLATES[k];
+  if(!t) return;
+  document.getElementById('templateInfo').innerHTML = t.description +
+    `<br><b>${t.n_landmarks}</b> landmarks`;
+  document.getElementById('nLandmarks').value = t.n_landmarks;
+}
+
+// ============= UPLOAD =============
+const fileInput = document.getElementById('fileInput');
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('click', () => fileInput.click());
+['dragenter','dragover'].forEach(e =>
+  dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(e =>
+  dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', ev => {
+  ev.preventDefault();
+  if (ev.dataTransfer.files.length) handleFiles(ev.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFiles(fileInput.files);
+});
+
+async function handleFiles(files){
+  const group = document.getElementById('groupInput').value || 'default';
+  const n = document.getElementById('nLandmarks').value || 19;
+  const method = document.getElementById('detectMethod').value;
+  const template = document.getElementById('templateSelect').value;
+  document.getElementById('metaStatus').innerHTML = '<span class="spinner"></span> Uploading…';
+
+  for(const file of files){
+    const fd = new FormData();
+    fd.append('file', file); fd.append('group', group);
+    fd.append('n_landmarks', n); fd.append('method', method);
+    fd.append('template', template);
+    try{
+      const r = await fetch('/api/upload', {method:'POST', body:fd});
+      const data = await r.json();
+      if(!r.ok){ toast(data.error || 'Upload failed', 'error'); continue; }
+      SPECIMENS.push(data.specimen);
+      toast(`Added ${file.name} → ${data.specimen.n_landmarks} LM`, 'ok');
+    }catch(e){ toast('Upload error: '+e.message, 'error'); }
+  }
+  fileInput.value = '';
+  renderSpecimenList();
+  if(SPECIMENS.length && !CURRENT) selectSpecimen(SPECIMENS[SPECIMENS.length-1].id);
+  document.getElementById('metaStatus').textContent = 'Idle';
+}
+
+// ============= SPECIMEN LIST =============
+function renderSpecimenList(){
+  const list = document.getElementById('specimenList');
+  document.getElementById('specCount').textContent = SPECIMENS.length;
+  document.getElementById('metaSpecimens').textContent = SPECIMENS.length;
+  document.getElementById('metaLandmarks').textContent =
+    SPECIMENS.length ? SPECIMENS[0].n_landmarks : '0';
+
+  if(!SPECIMENS.length){
+    list.innerHTML = '<div class="specimen-empty">No specimens yet —<br/>upload your first sample.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  SPECIMENS.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'specimen' + (CURRENT?.id === s.id ? ' active' : '');
+    row.innerHTML = `
+      <div class="specimen-thumb" style="background-image:url('${s.image_b64}')"></div>
+      <div class="specimen-info">
+        <div class="name">${s.name}</div>
+        <div class="meta">${s.n_landmarks} LM · CS=${fmt(s.centroid_size,1)}</div>
+      </div>
+      <div class="group-pill">${s.group}</div>`;
+    row.addEventListener('click', () => selectSpecimen(s.id));
+    list.appendChild(row);
+  });
+}
+
+async function selectSpecimen(id){
+  const r = await fetch('/api/specimen/' + id);
+  const data = await r.json();
+  if(data.error){ toast(data.error, 'error'); return; }
+  CURRENT = data;
+  renderSpecimenList();
+  showSpecimenInViewer();
+  switchTab('digitize');
+}
+
+// ============= CANVAS =============
+const canvas = document.getElementById('viewerCanvas');
+const ctx = canvas.getContext('2d');
+let imgEl = null;
+
+function showSpecimenInViewer(){
+  if(!CURRENT) return;
+  document.getElementById('canvasEmpty').style.display = 'none';
+  canvas.style.display = 'block';
+  document.getElementById('viewerName').textContent = CURRENT.name;
+  document.getElementById('viewerDim').textContent = `${CURRENT.width}×${CURRENT.height}`;
+  document.getElementById('viewerLM').textContent = CURRENT.landmarks.length;
+  document.getElementById('viewerCS').textContent = fmt(CURRENT.centroid_size, 2);
+  document.getElementById('viewerGroup').textContent = CURRENT.group;
+  document.getElementById('viewerTpl').textContent = CURRENT.template || '—';
+  imgEl = new Image();
+  imgEl.onload = () => { fitCanvas(); drawViewer(); };
+  imgEl.src = CURRENT.image_b64;
+}
+
+function fitCanvas(){
+  if(!imgEl) return;
+  const wrap = document.getElementById('canvasWrap');
+  const maxW = Math.min(MAX_W, wrap.clientWidth - 36);
+  CANVAS_SCALE = Math.min(maxW / CURRENT.width, 1) * ZOOM;
+  canvas.width = CURRENT.width * CANVAS_SCALE;
+  canvas.height = CURRENT.height * CANVAS_SCALE;
+}
+
+function drawViewer(){
+  if(!imgEl || !CURRENT) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+  const overlay = document.getElementById('overlaySelect').value;
+  const lms = CURRENT.landmarks;
+  const tpl = TEMPLATES[CURRENT.template];
+
+  if(overlay === 'outline' && CURRENT.outline && CURRENT.outline.length){
+    ctx.strokeStyle = 'rgba(94,124,82,0.7)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    CURRENT.outline.forEach((p, i) => {
+      const x = p[0]*CANVAS_SCALE, y = p[1]*CANVAS_SCALE;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  if((overlay === 'links' || overlay === 'sliders') && tpl && tpl.links){
+    ctx.strokeStyle = 'rgba(20,50,71,0.45)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    tpl.links.forEach(([a,b]) => {
+      if(lms[a] && lms[b]){
+        ctx.moveTo(lms[a][0]*CANVAS_SCALE, lms[a][1]*CANVAS_SCALE);
+        ctx.lineTo(lms[b][0]*CANVAS_SCALE, lms[b][1]*CANVAS_SCALE);
+      }
+    });
+    ctx.stroke();
+  }
+
+  let sliderSet = new Set();
+  if(overlay === 'sliders' && tpl){
+    const sliderDefs = {
+      "rissoa": [2, 4, 15, 17],
+      "bivalve": Array.from({length:13}, (_,i) => i<6 ? i+1 : i+2),
+      "echinoid": [],
+      "generic_outline": Array.from({length:14}, (_,i) => i+1),
+    };
+    (sliderDefs[CURRENT.template] || []).forEach(i => sliderSet.add(i));
+  }
+
+  lms.forEach((p, i) => {
+    const x = p[0]*CANVAS_SCALE, y = p[1]*CANVAS_SCALE;
+    const isSlider = sliderSet.has(i);
+    ctx.fillStyle = '#0a1822';
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = isSlider ? '#e0a542' : '#d6553d';
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI*2);
+    ctx.fill();
+    if(overlay !== 'dots'){
+      ctx.fillStyle = '#fbf8ee';
+      ctx.font = 'bold 9px JetBrains Mono';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(i+1, x, y+0.5);
+    }
+  });
+}
+
+canvas.addEventListener('click', (e) => {
+  if(!CURRENT) return;
+  const rect = canvas.getBoundingClientRect();
+  const ix = (e.clientX - rect.left) / CANVAS_SCALE;
+  const iy = (e.clientY - rect.top) / CANVAS_SCALE;
+  const mode = document.getElementById('modeSelect').value;
+  if(mode === 'add') CURRENT.landmarks.push([ix, iy]);
+  else if(mode === 'delete'){
+    let bestI = -1, bestD = 12 / CANVAS_SCALE;
+    CURRENT.landmarks.forEach((p, i) => {
+      const d = Math.hypot(p[0]-ix, p[1]-iy);
+      if(d < bestD){ bestD = d; bestI = i; }
+    });
+    if(bestI >= 0) CURRENT.landmarks.splice(bestI, 1);
+  } else if(mode === 'move'){
+    let bestI = -1, bestD = 12 / CANVAS_SCALE;
+    CURRENT.landmarks.forEach((p, i) => {
+      const d = Math.hypot(p[0]-ix, p[1]-iy);
+      if(d < bestD){ bestD = d; bestI = i; }
+    });
+    if(bestI >= 0) CURRENT.landmarks[bestI] = [ix, iy];
+  }
+  drawViewer();
+  document.getElementById('viewerLM').textContent = CURRENT.landmarks.length;
+});
+
+document.getElementById('overlaySelect').addEventListener('change', drawViewer);
+document.getElementById('zoomIn').addEventListener('click', () => { ZOOM = Math.min(ZOOM*1.25, 4); fitCanvas(); drawViewer(); });
+document.getElementById('zoomOut').addEventListener('click', () => { ZOOM = Math.max(ZOOM/1.25, 0.3); fitCanvas(); drawViewer(); });
+document.getElementById('zoomReset').addEventListener('click', () => { ZOOM = 1; fitCanvas(); drawViewer(); });
+
+document.getElementById('clearLM').addEventListener('click', () => {
+  if(!CURRENT) return;
+  CURRENT.landmarks = [];
+  drawViewer();
+  document.getElementById('viewerLM').textContent = 0;
+});
+
+document.getElementById('saveLM').addEventListener('click', async () => {
+  if(!CURRENT) return;
+  const r = await fetch('/api/specimen/' + CURRENT.id + '/landmarks', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({landmarks: CURRENT.landmarks, group: CURRENT.group}),
+  });
+  const data = await r.json();
+  if(data.ok){
+    CURRENT.centroid_size = data.centroid_size;
+    document.getElementById('viewerCS').textContent = fmt(data.centroid_size, 2);
+    const sIdx = SPECIMENS.findIndex(s => s.id === CURRENT.id);
+    if(sIdx >= 0){
+      SPECIMENS[sIdx].n_landmarks = CURRENT.landmarks.length;
+      SPECIMENS[sIdx].centroid_size = data.centroid_size;
+      SPECIMENS[sIdx].landmarks = CURRENT.landmarks;
+      renderSpecimenList();
+    }
+    toast('Landmarks saved · CS=' + fmt(data.centroid_size,2), 'ok');
+  }
+});
+
+document.getElementById('redetect').addEventListener('click', async () => {
+  if(!CURRENT) return;
+  const n = document.getElementById('nLandmarks').value || 19;
+  const method = document.getElementById('detectMethod').value;
+  document.getElementById('metaStatus').innerHTML = '<span class="spinner"></span> Detecting…';
+  const r = await fetch('/api/redetect/' + CURRENT.id, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({n_landmarks: n, method}),
+  });
+  const data = await r.json();
+  document.getElementById('metaStatus').textContent = 'Idle';
+  if(data.error){ toast(data.error, 'error'); return; }
+  CURRENT.landmarks = data.landmarks;
+  CURRENT.centroid_size = data.centroid_size;
+  drawViewer();
+  document.getElementById('viewerLM').textContent = data.landmarks.length;
+  document.getElementById('viewerCS').textContent = fmt(data.centroid_size, 2);
+  const sIdx = SPECIMENS.findIndex(s => s.id === CURRENT.id);
+  if(sIdx >= 0){
+    SPECIMENS[sIdx].n_landmarks = data.landmarks.length;
+    SPECIMENS[sIdx].centroid_size = data.centroid_size;
+    SPECIMENS[sIdx].landmarks = data.landmarks;
+    renderSpecimenList();
+  }
+  toast('Re-detected ' + data.landmarks.length + ' landmarks', 'ok');
+});
+
+window.addEventListener('resize', () => { if(CURRENT){ fitCanvas(); drawViewer(); } });
+
+// ============= TABS =============
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.dataset.tab));
+});
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+  if(name === 'data') renderRawData();
+  if(ANALYSIS){
+    if(name === 'procrustes') renderProcrustesPlots();
+    if(name === 'pca') renderPcaPlots();
+    if(name === 'tps') renderTpsPlot();
+    if(name === 'efa') renderEFA();
+    if(name === 'stats') renderStatsPlots();
+    if(name === 'allometry') renderAllometryPlots();
+  }
+}
+
+// ============= ANALYSIS =============
+document.getElementById('runAnalysis').addEventListener('click', async () => {
+  if(SPECIMENS.length < 3){ toast('Need at least 3 specimens', 'error'); return; }
+  if(CURRENT){
+    await fetch('/api/specimen/' + CURRENT.id + '/landmarks', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({landmarks: CURRENT.landmarks, group: CURRENT.group}),
+    });
+  }
+  const useSliders = document.getElementById('useSliders').checked;
+  const doEFA = document.getElementById('doEFA').checked;
+  const nPerm = parseInt(document.getElementById('nPerm').value) || 999;
+  const template = document.getElementById('templateSelect').value;
+  document.getElementById('metaStatus').innerHTML = '<span class="spinner"></span> Running pipeline…';
+  const r = await fetch('/api/analyze', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({use_sliders:useSliders, do_efa:doEFA, n_perm:nPerm, template})
+  });
+  const data = await r.json();
+  document.getElementById('metaStatus').textContent = 'Idle';
+  if(data.error){ toast(data.error, 'error'); return; }
+  ANALYSIS = data;
+  toast(`Analysis complete · ${data.n_specimens} specimens · ${data.n_perm} permutations`, 'ok');
+  renderAllAnalysis();
+  switchTab('procrustes');
+});
+
+function renderAllAnalysis(){
+  document.getElementById('gpaN').textContent = ANALYSIS.n_specimens;
+  document.getElementById('gpaK').textContent = ANALYSIS.n_landmarks;
+  document.getElementById('gpaTotalVar').textContent = fmt(ANALYSIS.total_procrustes_variance, 5);
+  document.getElementById('gpaIters').textContent = ANALYSIS.convergence.length;
+  const sb = document.getElementById('gpaSliderBadge');
+  sb.textContent = ANALYSIS.sliding_used ? 'SLIDING' : 'FIXED';
+  sb.style.color = ANALYSIS.sliding_used ? 'var(--amber)' : 'var(--coral)';
+
+  const cs = ANALYSIS.centroid_sizes;
+  const mean = cs.reduce((a,b)=>a+b,0)/cs.length;
+  const std = Math.sqrt(cs.reduce((a,b)=>a+(b-mean)**2,0)/cs.length);
+  document.getElementById('csMean').textContent = fmt(mean, 2);
+  document.getElementById('csStd').textContent = fmt(std, 2);
+  document.getElementById('csMin').textContent = fmt(Math.min(...cs), 2);
+  document.getElementById('csMax').textContent = fmt(Math.max(...cs), 2);
+
+  const v1 = (ANALYSIS.pca_explained[0]*100).toFixed(1);
+  const v2 = (ANALYSIS.pca_explained[1] ? ANALYSIS.pca_explained[1]*100 : 0).toFixed(1);
+  document.getElementById('pcaVarLabel').textContent = `PC1: ${v1}% · PC2: ${v2}%`;
+
+  const a = ANALYSIS.allometry;
+  document.getElementById('allomR2').textContent = fmt(a.r_squared, 4);
+  document.getElementById('allomP').textContent = fmt(a.p_value, 4);
+  document.getElementById('allomSlope').textContent = fmt(a.slope_norm, 4);
+  document.getElementById('allomPCs').textContent = a.n_pcs_used;
+  const ab = document.getElementById('allomBadge');
+  ab.textContent = a.p_value < 0.05 ? 'sig p<0.05' : 'n.s.';
+  ab.style.color = a.p_value < 0.05 ? 'var(--kelp)' : 'var(--muted)';
+  if(a.HOS){
+    document.getElementById('hosCard').style.display = '';
+    document.getElementById('hosF').textContent = fmt(a.HOS.F, 3);
+    document.getElementById('hosP').textContent = fmt(a.HOS.p_value, 4);
+    document.getElementById('hosInterp').textContent = a.HOS.interpretation;
+    const hb = document.getElementById('hosBadge');
+    hb.textContent = a.HOS.p_value < 0.05 ? 'unique' : 'common';
+    hb.style.color = a.HOS.p_value < 0.05 ? 'var(--coral)' : 'var(--kelp)';
+  }
+
+  if(ANALYSIS.cac){
+    document.getElementById('cacNorm').textContent = fmt(ANALYSIS.cac.cac_direction_norm, 4);
+    document.getElementById('cacRes').textContent = fmt(ANALYSIS.cac.residual_var, 5);
+    const ratio = (ANALYSIS.cac.raw_var - ANALYSIS.cac.residual_var) / ANALYSIS.cac.raw_var;
+    document.getElementById('cacRatio').textContent = (ratio*100).toFixed(2) + '%';
+  }
+
+  const r = ANALYSIS.rrpp;
+  if(r){
+    document.getElementById('rrppCard').style.display = '';
+    document.getElementById('rrppF').textContent = fmt(r.F, 3);
+    document.getElementById('rrppR2').textContent = fmt(r.Rsq, 4);
+    document.getElementById('rrppZ').textContent = fmt(r.Z, 3);
+    document.getElementById('rrppP').textContent = fmt(r.p_value, 4);
+    document.getElementById('rrppDf').textContent = `${r.df_among}, ${r.df_within}`;
+    document.getElementById('rrppNperm').textContent = r.n_perm;
+    const rb = document.getElementById('rrppBadge');
+    rb.textContent = r.p_value < 0.05 ? 'sig' : 'n.s.';
+    rb.style.color = r.p_value < 0.05 ? 'var(--kelp)' : 'var(--muted)';
+  } else {
+    document.getElementById('rrppCard').style.display = 'none';
+  }
+
+  const m = ANALYSIS.manova;
+  if(m){
+    document.getElementById('manovaCard').style.display = '';
+    document.getElementById('manovaWilks').textContent = fmt(m.wilks_lambda, 4);
+    document.getElementById('manovaChi').textContent = fmt(m.chi2, 3);
+    document.getElementById('manovaDf').textContent = m.df1 + ', ' + m.df2;
+    document.getElementById('manovaP').textContent = fmt(m.p_value, 5);
+    const mb = document.getElementById('manovaBadge');
+    mb.textContent = m.p_value < 0.05 ? 'sig' : 'n.s.';
+    mb.style.color = m.p_value < 0.05 ? 'var(--kelp)' : 'var(--muted)';
+  } else {
+    document.getElementById('manovaCard').style.display = 'none';
+  }
+
+  const dg = document.getElementById('disparityGrid');
+  dg.innerHTML = '';
+  Object.entries(ANALYSIS.disparity).forEach(([k,v]) => {
+    const item = document.createElement('div');
+    item.className = 'stat-item';
+    item.innerHTML = `<div class="stat-label">${k.replace('_',' ')}</div>
+                      <div class="stat-value mono">${fmt(v, 5)}</div>`;
+    dg.appendChild(item);
+  });
+
+  if(ANALYSIS.tps){
+    document.getElementById('tpsBE').textContent = fmt(ANALYSIS.tps.bending_energy, 4);
+    document.getElementById('tpsTarget').textContent = ANALYSIS.names[ANALYSIS.tps.extreme_max].slice(0,18);
+  }
+
+  if(ANALYSIS.phylogenetic_signal){
+    document.getElementById('phyloCard').style.display = '';
+    document.getElementById('kmult').textContent = fmt(ANALYSIS.phylogenetic_signal.K_mult, 4);
+    document.getElementById('kmultP').textContent = fmt(ANALYSIS.phylogenetic_signal.p_value, 4);
+  }
+
+  if(ANALYSIS.efa){
+    document.getElementById('efaN').textContent = ANALYSIS.efa.n_specimens_analysed;
+    document.getElementById('efaH').textContent = ANALYSIS.efa.n_harmonics;
+    document.getElementById('efaPC1').textContent = (ANALYSIS.efa.pca_explained[0]*100).toFixed(1)+'%';
+    document.getElementById('efaPC2').textContent = ((ANALYSIS.efa.pca_explained[1]||0)*100).toFixed(1)+'%';
+  }
+
+  ['procrustesEmpty','pcaEmpty','tpsEmpty','statsEmpty','allomEmpty','efaEmpty'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display='none';
+  });
+  ['procrustesContent','pcaContent','tpsContent','statsContent','allomContent','efaContent'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display='block';
+  });
+  if(!ANALYSIS.efa){
+    document.getElementById('efaContent').style.display='none';
+    document.getElementById('efaEmpty').style.display='block';
+  }
+
+  renderProcrustesPlots();
+  renderPcaPlots();
+  renderTpsPlot();
+  renderEFA();
+  renderStatsPlots();
+  renderAllometryPlots();
+  renderPcaTable();
+}
+
+function renderProcrustesPlots(){
+  if(!ANALYSIS) return;
+  const traces = [];
+  ANALYSIS.aligned.forEach((cfg, i) => {
+    traces.push({
+      x: cfg.map(p => p[0]), y: cfg.map(p => -p[1]),
+      mode:'lines+markers', type:'scatter', name: ANALYSIS.names[i],
+      line:{color: colorFor(ANALYSIS.groups[i], i, ANALYSIS.groups), width:1},
+      marker:{color: colorFor(ANALYSIS.groups[i], i, ANALYSIS.groups), size:4, opacity:0.6},
+      opacity:0.45, showlegend:false, hoverinfo:'name',
+    });
+  });
+  const cons = ANALYSIS.consensus;
+  traces.push({
+    x: cons.map(p => p[0]), y: cons.map(p => -p[1]),
+    mode:'lines+markers', type:'scatter', name: 'Consensus',
+    line:{color:'#0a1822', width:2.5},
+    marker:{color:'#d6553d', size:9, line:{color:'#0a1822', width:1.5}},
+  });
+  const layout = Object.assign({}, PLOTLY_LAYOUT_BASE, {
+    showlegend:true, legend:{font:{size:11}},
+    xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {scaleanchor:'y', title:'x (Procrustes)'}),
+    yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:'y (Procrustes)'}),
+    height:480,
+  });
+  Plotly.newPlot('plotProcrustes', traces, layout, {responsive:true, displaylogo:false});
+
+  const colors = ANALYSIS.groups.map((g,i) => colorFor(g, i, ANALYSIS.groups));
+  Plotly.newPlot('plotProcDist',
+    [{x: ANALYSIS.names, y: ANALYSIS.proc_distances, type:'bar',
+      marker:{color: colors, line:{color:'#0a1822', width:1}}}],
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:300,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {tickangle:-30, title:''}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:'Procrustes distance to consensus'}),
+    }), {responsive:true, displaylogo:false});
+}
+
+function renderPcaPlots(){
+  if(!ANALYSIS) return;
+  const scores = ANALYSIS.pca_scores;
+  const groups = ANALYSIS.groups;
+  const uniqueGroups = Array.from(new Set(groups));
+  const traces = uniqueGroups.map((g, gi) => {
+    const idx = groups.map((gg, i) => gg === g ? i : -1).filter(i => i >= 0);
+    return {
+      x: idx.map(i => scores[i][0]), y: idx.map(i => scores[i][1]),
+      text: idx.map(i => ANALYSIS.names[i]),
+      mode:'markers+text', textposition:'top center',
+      textfont:{size:10, color:'#0a1822'}, type:'scatter', name:g,
+      marker:{color: GROUP_COLORS[gi % GROUP_COLORS.length], size:12, line:{color:'#0a1822', width:1.2}},
+    };
+  });
+  const v1 = (ANALYSIS.pca_explained[0]*100).toFixed(1);
+  const v2 = (ANALYSIS.pca_explained[1]*100).toFixed(1);
+  Plotly.newPlot('plotPCA', traces,
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:420,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {title:`PC1 (${v1}%)`}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:`PC2 (${v2}%)`}),
+      legend:{font:{size:11}},
+    }), {responsive:true, displaylogo:false});
+
+  const expl = ANALYSIS.pca_explained.slice(0, Math.min(10, ANALYSIS.pca_explained.length));
+  const cum = []; let s = 0;
+  expl.forEach(v => { s += v; cum.push(s); });
+  Plotly.newPlot('plotScree',
+    [{x: expl.map((_,i) => 'PC'+(i+1)), y: expl.map(v => v*100),
+      type:'bar', name:'Variance %',
+      marker:{color:'#143247', line:{color:'#0a1822', width:1}}},
+     {x: expl.map((_,i) => 'PC'+(i+1)), y: cum.map(v => v*100),
+      type:'scatter', mode:'lines+markers', name:'Cumulative %', yaxis:'y2',
+      line:{color:'#d6553d', width:2.5},
+      marker:{color:'#d6553d', size:8, line:{color:'#0a1822', width:1}}}],
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:420,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {title:''}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:'% variance', range:[0,100]}),
+      yaxis2:{title:'Cumulative %', overlaying:'y', side:'right', gridcolor:'rgba(0,0,0,0)', range:[0,105]},
+      legend:{font:{size:11}},
+    }), {responsive:true, displaylogo:false});
+}
+
+function renderPcaTable(){
+  if(!ANALYSIS) return;
+  const t = document.getElementById('pcaTable');
+  const nPC = Math.min(6, ANALYSIS.pca_scores[0].length);
+  let html = '<thead><tr><th>Specimen</th><th>Group</th><th>CS</th>';
+  for(let k=0;k<nPC;k++) html += `<th>PC${k+1}</th>`;
+  html += '</tr></thead><tbody>';
+  ANALYSIS.names.forEach((n, i) => {
+    html += `<tr><td>${n}</td><td>${ANALYSIS.groups[i]}</td><td>${fmt(ANALYSIS.centroid_sizes[i], 2)}</td>`;
+    for(let k=0;k<nPC;k++) html += `<td>${fmt(ANALYSIS.pca_scores[i][k], 4)}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+function renderTpsPlot(){
+  if(!ANALYSIS) return;
+  const tps = ANALYSIS.tps;
+  const xx = tps.x, yy = tps.y, warped = tps.warped;
+  const gridSize = xx.length;
+  const traces = [];
+  for(let i=0; i<gridSize; i++){
+    const x=[], y=[];
+    for(let j=0; j<gridSize; j++){ x.push(warped[i][j][0]); y.push(-warped[i][j][1]); }
+    traces.push({x,y, mode:'lines', type:'scatter', line:{color:'rgba(20,50,71,0.5)', width:1}, hoverinfo:'skip', showlegend:false});
+  }
+  for(let j=0; j<gridSize; j++){
+    const x=[], y=[];
+    for(let i=0; i<gridSize; i++){ x.push(warped[i][j][0]); y.push(-warped[i][j][1]); }
+    traces.push({x,y, mode:'lines', type:'scatter', line:{color:'rgba(20,50,71,0.5)', width:1}, hoverinfo:'skip', showlegend:false});
+  }
+  const cons = ANALYSIS.consensus;
+  traces.push({x: cons.map(p => p[0]), y: cons.map(p => -p[1]), mode:'lines+markers', type:'scatter',
+    name:'Consensus', line:{color:'#0a1822', width:2}, marker:{color:'#0a1822', size:8}});
+  const ex = ANALYSIS.aligned[ANALYSIS.tps.extreme_max];
+  traces.push({x: ex.map(p => p[0]), y: ex.map(p => -p[1]), mode:'lines+markers', type:'scatter',
+    name:'PC1 max ('+ANALYSIS.names[ANALYSIS.tps.extreme_max]+')',
+    line:{color:'#d6553d', width:2.5},
+    marker:{color:'#d6553d', size:9, line:{color:'#0a1822', width:1.2}}});
+  Plotly.newPlot('plotTPS', traces,
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:560,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {scaleanchor:'y', title:''}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:''}),
+      legend:{font:{size:11}},
+    }), {responsive:true, displaylogo:false});
+}
+
+function renderEFA(){
+  if(!ANALYSIS || !ANALYSIS.efa) return;
+  const e = ANALYSIS.efa;
+  const groups = e.specimen_indices.map(i => ANALYSIS.groups[i]);
+  const names = e.specimen_indices.map(i => ANALYSIS.names[i]);
+  const uniq = Array.from(new Set(groups));
+  const traces = uniq.map((g, gi) => {
+    const idx = groups.map((gg,i) => gg===g ? i : -1).filter(i => i>=0);
+    return {
+      x: idx.map(i => e.pca_scores[i][0]), y: idx.map(i => e.pca_scores[i][1]),
+      text: idx.map(i => names[i]),
+      mode:'markers+text', textposition:'top center',
+      textfont:{size:10, color:'#0a1822'}, type:'scatter', name:g,
+      marker:{color: GROUP_COLORS[gi % GROUP_COLORS.length], size:12, line:{color:'#0a1822', width:1.2}},
+    };
+  });
+  const v1 = (e.pca_explained[0]*100).toFixed(1);
+  const v2 = ((e.pca_explained[1]||0)*100).toFixed(1);
+  Plotly.newPlot('plotEFA', traces,
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:480,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {title:`EFA-PC1 (${v1}%)`}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:`EFA-PC2 (${v2}%)`}),
+      legend:{font:{size:11}},
+    }), {responsive:true, displaylogo:false});
+}
+
+function renderStatsPlots(){
+  if(!ANALYSIS) return;
+  if(ANALYSIS.mahalanobis){
+    const groups = ANALYSIS.mahalanobis.groups;
+    const M = ANALYSIS.mahalanobis.matrix;
+    Plotly.newPlot('plotMahal',
+      [{z:M, x:groups, y:groups, type:'heatmap',
+        colorscale:[[0,'#fbf8ee'],[0.5,'#e0a542'],[1,'#d6553d']],
+        showscale:true,
+        hovertemplate:'%{x} ↔ %{y}<br>D = %{z:.3f}<extra></extra>'}],
+      Object.assign({}, PLOTLY_LAYOUT_BASE, {height:380,
+        xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {title:''}),
+        yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:''})}),
+      {responsive:true, displaylogo:false});
+    document.getElementById('mahalanobisCard').style.display = '';
+  } else {
+    document.getElementById('mahalanobisCard').style.display = 'none';
+  }
+}
+
+function renderAllometryPlots(){
+  if(!ANALYSIS) return;
+  const cs = ANALYSIS.centroid_sizes;
+  const logcs = cs.map(v => Math.log(v));
+  const cac = ANALYSIS.cac ? ANALYSIS.cac.cac_scores : ANALYSIS.pca_scores.map(s => s[0]);
+  const colors = ANALYSIS.groups.map((g,i) => colorFor(g, i, ANALYSIS.groups));
+  const uniq = Array.from(new Set(ANALYSIS.groups));
+  const traces = uniq.map((g, gi) => {
+    const idx = ANALYSIS.groups.map((gg,i) => gg===g ? i : -1).filter(i => i>=0);
+    return {
+      x: idx.map(i => logcs[i]), y: idx.map(i => cac[i]),
+      text: idx.map(i => ANALYSIS.names[i]),
+      mode:'markers', type:'scatter', name:g,
+      marker:{color:GROUP_COLORS[gi % GROUP_COLORS.length], size:12, line:{color:'#0a1822',width:1.2}},
+    };
+  });
+  const meanX = logcs.reduce((a,b)=>a+b,0)/logcs.length;
+  const meanY = cac.reduce((a,b)=>a+b,0)/cac.length;
+  const num = logcs.reduce((s,x,i) => s + (x-meanX)*(cac[i]-meanY), 0);
+  const den = logcs.reduce((s,x) => s + (x-meanX)**2, 0);
+  const slope = num/den, intercept = meanY - slope*meanX;
+  const xs = [Math.min(...logcs), Math.max(...logcs)];
+  traces.push({
+    x: xs, y: xs.map(x => slope*x + intercept),
+    mode:'lines', type:'scatter', name:'OLS fit',
+    line:{color:'#0a1822', width:1.5, dash:'dash'},
+  });
+  Plotly.newPlot('plotAllometry', traces,
+    Object.assign({}, PLOTLY_LAYOUT_BASE, {
+      height:420,
+      xaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.xaxis, {title:'log( Centroid Size )'}),
+      yaxis:Object.assign({}, PLOTLY_LAYOUT_BASE.yaxis, {title:ANALYSIS.cac ? 'CAC scores' : 'PC1'}),
+      legend:{font:{size:11}},
+    }), {responsive:true, displaylogo:false});
+}
+
+function renderRawData(){
+  const t = document.getElementById('registryTable');
+  let html = '<thead><tr><th>ID</th><th>Name</th><th>Group</th><th>Template</th><th>Dimensions</th><th># LM</th><th>CS</th><th>Added</th></tr></thead><tbody>';
+  SPECIMENS.forEach(s => {
+    html += `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.group}</td><td>${s.template||'-'}</td><td>${s.width}×${s.height}</td><td>${s.n_landmarks}</td><td>${fmt(s.centroid_size,2)}</td><td>${s.added||''}</td></tr>`;
+  });
+  html += '</tbody>';
+  t.innerHTML = html;
+
+  const t2 = document.getElementById('rawTable');
+  let h = '<thead><tr><th>Specimen</th><th>Group</th><th>LM</th><th>x</th><th>y</th></tr></thead><tbody>';
+  SPECIMENS.forEach(s => {
+    s.landmarks.forEach((p, i) => {
+      h += `<tr><td>${s.name}</td><td>${s.group}</td><td>${i+1}</td><td>${fmt(p[0],2)}</td><td>${fmt(p[1],2)}</td></tr>`;
+    });
+  });
+  h += '</tbody>';
+  t2.innerHTML = h;
+}
+
+document.getElementById('exportCSV').addEventListener('click', () => { window.location = '/api/export/csv'; });
+document.getElementById('exportTPS').addEventListener('click', () => { window.location = '/api/export/tps'; });
+document.getElementById('resetAll').addEventListener('click', async () => {
+  if(!confirm('Discard all specimens and analysis?')) return;
+  await fetch('/api/reset', {method:'POST'});
+  SPECIMENS = []; CURRENT = null; ANALYSIS = null;
+  renderSpecimenList();
+  document.getElementById('canvasEmpty').style.display = 'block';
+  canvas.style.display = 'none';
+  ['viewerName','viewerDim','viewerLM','viewerCS','viewerGroup','viewerTpl'].forEach(id =>
+    document.getElementById(id).textContent = '—');
+  document.getElementById('viewerLM').textContent = '0';
+  ['procrustesContent','pcaContent','tpsContent','statsContent','allomContent','efaContent'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display='none';
+  });
+  ['procrustesEmpty','pcaEmpty','tpsEmpty','statsEmpty','allomEmpty','efaEmpty'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display='block';
+  });
+  toast('All cleared', 'ok');
+});
+
+// ============= INIT =============
+loadTemplates();
+renderSpecimenList();
+</script>
+</body>
+</html>
