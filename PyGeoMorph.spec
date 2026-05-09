@@ -22,20 +22,27 @@ HERE = Path(SPECPATH).resolve() if 'SPECPATH' in globals() else Path('.').resolv
 # Hidden imports — modules that PyInstaller's static analysis misses.
 # ---------------------------------------------------------------------
 hiddenimports = []
+# numpy: collect tutti i submoduli per evitare i problemi di hook
+hiddenimports += collect_submodules('numpy')
+# scipy: i submoduli più usati
 hiddenimports += collect_submodules('scipy')
 hiddenimports += collect_submodules('scipy.special')
 hiddenimports += collect_submodules('scipy.linalg')
 hiddenimports += collect_submodules('scipy.spatial')
 hiddenimports += collect_submodules('scipy.stats')
+# Flask + estensioni
 hiddenimports += collect_submodules('flask')
 hiddenimports += [
     'cv2',
     'PIL.Image',
     'PIL.ImageFilter',
-    'numpy',
     'pdf2image',
     'jinja2.ext',
     'werkzeug.middleware.proxy_fix',
+    # numpy internals che alcuni hook mancano
+    'numpy.core._methods',
+    'numpy.core._dtype_ctypes',
+    'numpy.lib.format',
 ]
 
 # ---------------------------------------------------------------------
