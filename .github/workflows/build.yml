@@ -79,11 +79,34 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          ./dist/PyGeoMorph &
+          ./dist/PyGeoMorph > out.log 2> err.log &
           PID=$!
-          sleep 6
-          curl -fsS http://127.0.0.1:5000/ > /dev/null && echo "Server is up"
+          echo "Started process PID=$PID"
+
+          UP=0
+          for i in $(seq 1 15); do
+            sleep 2
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "::error::Process exited prematurely"
+              break
+            fi
+            if curl -fsS --max-time 3 http://127.0.0.1:5000/ > /dev/null 2>&1; then
+              echo "Server is up after $((i*2))s"
+              UP=1
+              break
+            fi
+            echo "  attempt $i/15: not yet ready..."
+          done
+
+          echo "===== STDOUT ====="; cat out.log || true
+          echo "===== STDERR ====="; cat err.log || true
+
           kill $PID 2>/dev/null || true
+
+          if [ $UP -ne 1 ]; then
+            echo "::error::Server did not respond on port 5000"
+            exit 1
+          fi
 
       - name: Smoke test (Windows)
         if: runner.os == 'Windows'
