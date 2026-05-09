@@ -108,24 +108,22 @@ jobs:
             exit 1
           fi
 
-      - name: Smoke test (Windows)
+- name: Smoke test (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Avvia con redirect di stdout/stderr per catturare eventuali crash
           $proc = Start-Process -FilePath ".\dist\PyGeoMorph.exe" `
                                 -PassThru `
                                 -RedirectStandardOutput "out.log" `
                                 -RedirectStandardError "err.log"
-          Write-Host "Started process PID=$($proc.Id)"
+          Write-Host ("Started process PID=" + $proc.Id)
 
-          # Polling: prova ogni 2 secondi fino a 30 secondi totali
           $maxAttempts = 15
           $up = $false
           for ($i=1; $i -le $maxAttempts; $i++) {
             Start-Sleep -Seconds 2
             if ($proc.HasExited) {
-              Write-Host "::error::Process exited prematurely with code $($proc.ExitCode)"
+              Write-Host ("::error::Process exited prematurely with code " + $proc.ExitCode)
               break
             }
             try {
@@ -133,21 +131,19 @@ jobs:
                                      -UseBasicParsing `
                                      -TimeoutSec 3 `
                                      -ErrorAction Stop
-              Write-Host "Server is up after $($i*2)s (HTTP $($r.StatusCode))"
+              Write-Host ("Server is up after " + ($i*2) + "s (HTTP " + $r.StatusCode + ")")
               $up = $true
               break
             } catch {
-              Write-Host "  attempt $i/$maxAttempts: not yet ready..."
+              Write-Host ("  attempt " + $i + "/" + $maxAttempts + ": not yet ready...")
             }
           }
 
-          # In ogni caso stampa i log dell'app per il debug
           Write-Host "===== STDOUT ====="
           if (Test-Path "out.log") { Get-Content "out.log" } else { Write-Host "(empty)" }
           Write-Host "===== STDERR ====="
           if (Test-Path "err.log") { Get-Content "err.log" } else { Write-Host "(empty)" }
 
-          # Cleanup
           Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
 
           if (-not $up) {
