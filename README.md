@@ -230,6 +230,7 @@ If you use PyGeoMorph in a publication, please cite:
 > Patti, F.P. (2026). *PyGeoMorph: a modern all-in-one Python pipeline for
 > geometric morphometric analysis of marine invertebrates.*
 > Stazione Zoologica Anton Dohrn, Naples, Italy.
+> https://doi.org/10.5281/zenodo.20117484
 
 …and the original paper that provides the conceptual basis for the
 malacological template:
