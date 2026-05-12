@@ -1,79 +1,104 @@
 cff-version: 1.2.0
-message: "If you use PhyloSuite in published work, please cite it as below."
-title: "PhyloSuite: an integrated phylogenetic analysis pipeline"
-version: "1.0.2"
-date-released: "2026-05-04"
+message: "If you use PyGeoMorph in a publication, please cite it as below."
+title: "PyGeoMorph: a modern all-in-one Python pipeline for geometric morphometric analysis of marine invertebrates"
+version: "2.0.0"
+date-released: "2026-05-11"
 abstract: >
-  PhyloSuite is an integrated phylogenetic analysis pipeline that combines
-  sequence fetching, multiple sequence alignment, substitution model selection,
-  phylogenetic tree inference (via IQ-TREE 2), and publication-ready report
-  generation into a single local web interface. It includes an end-to-end
-  pipeline module, a comparative dashboard for multi-dataset model selection,
-  and PhyloWizard Reports with automated Methods section text and inference
-  commands for five phylogenetic tools.
+  PyGeoMorph is an all-in-one Python suite for geometric morphometric analysis
+  of marine invertebrates (gastropods, bivalves, brachiopods, echinoids).
+  It integrates the full classical workflow — landmark placement, Generalized
+  Procrustes Analysis (GPA) with sliding semi-landmarks, Procrustes ANOVA via
+  RRPP, multivariate statistics (MANOVA, Mahalanobis distances), allometry
+  analysis (CAC, HOS), Elliptic Fourier Analysis, phylogenetic signal (Kmult),
+  and modularity/integration testing — in a single cross-platform local web
+  interface. It replaces the fragmented tpsDig2 + tpsRelw + SPSS + SYSTAT
+  pipeline widely used in malacological research, building on the methodology
+  of Criscione & Patti (2010) as a conceptual starting point.
 authors:
   - family-names: "Patti"
     given-names: "Francesco Paolo"
     orcid: "https://orcid.org/0000-0002-7975-2947"
+    affiliation: "Stazione Zoologica Anton Dohrn, Naples, Italy"
+    email: "francesco.patti@szn.it"
 license: MIT
-repository-code: "https://github.com/CyberTechSea/PhyloSuite"
-url: "https://github.com/CyberTechSea/PhyloSuite"
-doi: "10.5281/zenodo.20023552"
+repository-code: "https://github.com/CyberTechSea/PyGeoMorph"
+url: "https://github.com/CyberTechSea/PyGeoMorph"
+doi: "10.5281/zenodo.20117484"
 type: software
 keywords:
-  - phylogenetics
-  - model selection
-  - IQ-TREE
-  - ModelTest-NG
-  - sequence alignment
-  - MAFFT
-  - MUSCLE
-  - bioinformatics
-  - pipeline
+  - geometric morphometrics
+  - marine invertebrates
+  - gastropods
+  - bivalves
+  - Procrustes analysis
+  - landmark analysis
+  - semi-landmarks
+  - RRPP
+  - elliptic Fourier analysis
+  - malacology
+  - morphometry
 references:
   - type: article
-    title: "ModelTest-NG: A New and Scalable Tool for the Selection of DNA and Protein Evolutionary Models"
+    title: >
+      Similar shells are not necessarily a reliable guide to phylogeny:
+      Rissoa guerinii Recluz, 1843, and Rissoa lia (Monterosato, 1884)
+      (Caenogastropoda: Rissoidae): a case study
     authors:
-      - family-names: "Darriba"
-        given-names: "D."
-      - family-names: "Posada"
-        given-names: "D."
-      - family-names: "Kozlov"
-        given-names: "A.M."
-      - family-names: "Stamatakis"
+      - family-names: "Criscione"
+        given-names: "F."
+      - family-names: "Patti"
+        given-names: "F.P."
+        orcid: "https://orcid.org/0000-0002-7975-2947"
+    journal: "The Nautilus"
+    volume: 124
+    issue: 3
+    start: 117
+    end: 128
+    year: 2010
+  - type: software
+    title: "Geomorph: Software for geometric morphometric analyses"
+    authors:
+      - family-names: "Adams"
+        given-names: "D.C."
+      - family-names: "Collyer"
+        given-names: "M.L."
+      - family-names: "Kaliontzopoulou"
         given-names: "A."
-      - family-names: "Flouri"
-        given-names: "T."
-      - family-names: "Morel"
-        given-names: "B."
-    journal: "Molecular Biology and Evolution"
-    volume: 37
-    issue: 1
-    start: 291
-    end: 294
-    year: 2020
-    doi: "10.1093/molbev/msz189"
+    year: 2024
+    version: "4.0.8"
+    url: "https://CRAN.R-project.org/package=geomorph"
   - type: article
-    title: "IQ-TREE 2: New Models and Methods for Phylogenetic Inference"
+    title: "RRPP: An R package for fitting linear models to high-dimensional data using residual randomization"
     authors:
-      - family-names: "Minh"
-        given-names: "B.Q."
-      - family-names: "Schmidt"
-        given-names: "H.A."
-      - family-names: "Chernomor"
-        given-names: "O."
-      - family-names: "Schrempf"
-        given-names: "D."
-      - family-names: "Woodhams"
-        given-names: "M.D."
-      - family-names: "von Haeseler"
-        given-names: "A."
-      - family-names: "Lanfear"
-        given-names: "R."
-    journal: "Molecular Biology and Evolution"
-    volume: 37
-    issue: 5
-    start: 1530
-    end: 1534
-    year: 2020
-    doi: "10.1093/molbev/msaa015"
+      - family-names: "Collyer"
+        given-names: "M.L."
+      - family-names: "Adams"
+        given-names: "D.C."
+    journal: "Methods in Ecology and Evolution"
+    volume: 9
+    start: 1772
+    end: 1779
+    year: 2018
+    doi: "10.1111/2041-210X.13029"
+  - type: article
+    title: "A generalized K statistic for estimating phylogenetic signal from shape and other high-dimensional multivariate data"
+    authors:
+      - family-names: "Adams"
+        given-names: "D.C."
+    journal: "Systematic Biology"
+    volume: 63
+    start: 685
+    end: 697
+    year: 2014
+    doi: "10.1093/sysbio/syu030"
+  - type: article
+    title: "Evaluating modularity in morphometric data: challenges with the RV coefficient and a new test measure"
+    authors:
+      - family-names: "Adams"
+        given-names: "D.C."
+    journal: "Methods in Ecology and Evolution"
+    volume: 7
+    start: 565
+    end: 572
+    year: 2016
+    doi: "10.1111/2041-210X.12511"
